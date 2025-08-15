@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Breed Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1E1E1E;
+            --primary-color: #0D6EFD;
+            --primary-color-dark: #0B5ED7;
+            --text-color: #EAEAEA;
+            --text-color-secondary: #A0A0A0;
+            --border-color: #343A40;
+            --font-family-ar: 'IBM Plex Sans Arabic', sans-serif;
+            --font-family-en: 'Inter', sans-serif;
+            --border-radius: 12px;
+            --transition-speed: 0.3s;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family-ar), var(--font-family-en), sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+            background-image: radial-gradient(circle at 1% 1%, rgba(13, 110, 253, 0.08) 0%, transparent 30%),
+                              radial-gradient(circle at 99% 99%, rgba(13, 110, 253, 0.08) 0%, transparent 30%);
+        }
+        .page-wrapper { width: 100%; max-width: 1024px; } 
+        .container {
+            background: var(--surface-color); padding: 2.5rem;
+            border-radius: var(--border-radius); width: 100%; text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .upload-container { max-width: 550px; margin: auto; }
+        header h1 { color: #fff; font-weight: 600; font-size: 2.5rem; margin: 0; font-family: var(--font-family-en); }
+        header p { font-weight: 300; color: var(--text-color-secondary); margin: 0.5rem 0 2rem 0; }
+        #input-panel {
+            border: 2px dashed var(--border-color); border-radius: var(--border-radius);
+            padding: 2rem; position: relative; cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+        #input-panel.drag-over { border-color: var(--primary-color); background-color: rgba(13, 110, 253, 0.05); transform: scale(1.02); }
+        #input-panel.file-ready { padding: 1rem; border-style: solid; border-color: var(--primary-color); }
+        #image-input { display: none; }
+        .prompt-text { font-weight: 500; font-size: 1.1rem; }
+        .prompt-text span { color: var(--primary-color); font-weight: 600; }
+        #preview-container { display: none; text-align: center; }
+        #preview-container img { max-width: 100%; max-height: 250px; border-radius: 8px; margin-bottom: 1rem; }
+        .analyze-btn {
+            font-family: var(--font-family-ar);
+            width: 100%; padding: 14px; margin-top: 1rem; background: var(--primary-color);
+            border: none; border-radius: 8px; color: #fff; font-size: 1.1rem; font-weight: 600;
+            cursor: pointer; transition: all var(--transition-speed); opacity: 0; transform: translateY(10px);
+            animation: popIn 0.5s 0.2s ease-out forwards;
+        }
+        @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .analyze-btn:hover { background-color: var(--primary-color-dark); box-shadow: 0 0 15px rgba(13, 110, 253, 0.3); transform: translateY(-3px); }
+        .analyze-btn:active { transform: translateY(0); scale: 0.98; }
+        
+        .results-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 2.5rem; text-align: right; }
+        .image-column, .analysis-column { opacity: 0; animation: slideUp 0.7s ease-out forwards; }
+        .analysis-column { animation-delay: 0.15s; }
+        .uploaded-image-card {
+            border-radius: var(--border-radius); overflow: hidden; border: 1px solid var(--border-color);
+            transition: transform var(--transition-speed);
+        }
+        .uploaded-image-card:hover { transform: scale(1.03); }
+        .uploaded-image-card img { width: 100%; height: auto; display: block; aspect-ratio: 1 / 1; object-fit: cover; }
+        .analysis-column h2 { text-align: right; font-weight: 600; margin:0 0 1.5rem 0; }
+        .result-card {
+            background-color: #2a2a2a; border-radius: var(--border-radius); padding: 1.5rem; text-align: right;
+            margin-bottom: 2rem; border: 1px solid var(--border-color);
+            transition: all var(--transition-speed);
+        }
+        .result-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.3); border-color: var(--primary-color); }
+        .result-card h3 { margin: 0 0 1rem 0; color: var(--text-color-secondary); font-weight: 500; font-size: 1rem; }
+        .result-card .breed-name-ar { font-size: 2.5rem; font-weight: 700; color: var(--text-color); margin: 0; line-height: 1.2; }
+        .result-card .breed-name-en { font-family: var(--font-family-en); font-size: 1rem; font-weight: 500; color: var(--text-color-secondary); margin: 0.25rem 0 1.5rem 0; letter-spacing: 0.5px; direction: ltr; text-transform: capitalize; }
+        .probability-main { font-size: 1.1rem; font-weight: 500; }
+        .probability-main span { font-size: 1.3rem; font-weight: 700; color: var(--primary-color); }
+        
+        .other-possibilities ul { list-style: none; padding: 0; }
+        .other-possibilities li { display: flex; align-items: center; margin-bottom: 1rem; font-size: 1rem; opacity: 0; animation: slideUp 0.5s ease-out forwards; transition: background-color var(--transition-speed); padding: 0.5rem; border-radius: 8px;}
+        .other-possibilities li:hover { background-color: rgba(255, 255, 255, 0.05); }
+        .class-name { flex-grow: 1; font-weight: 500; }
+        .progress-bar { flex: 0 0 180px; height: 8px; background-color: #343A40; border-radius: 4px; overflow: hidden; margin: 0 1rem; }
+        .progress { height: 100%; background-color: var(--primary-color); border-radius: 4px; }
+        .score { flex: 0 0 60px; text-align: left; font-weight: 500; color: var(--text-color-secondary); direction: ltr; }
+
+        .try-again-btn {
+            font-family: var(--font-family-ar);
+            display: inline-block; margin-top: 1.5rem; padding: 12px 30px; background-color: var(--primary-color);
+            border-radius: 8px; color: #fff; text-decoration: none; font-weight: 600; font-size: 1.1rem;
+            border: none; transition: all var(--transition-speed);
+        }
+        .try-again-btn:hover { background-color: var(--primary-color-dark); transform: translateY(-3px); }
+        .try-again-btn:active { transform: translateY(0); scale: 0.98; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(18, 18, 18, 0.9); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 1000; }
+        .loading-content { width: 80%; max-width: 400px; text-align: center; }
+        #thinking-text { font-size: 1.1rem; font-weight: 500; color: var(--text-color); margin-bottom: 1rem; }
+        .loading-progress-bar { width: 100%; height: 6px; background-color: #343A40; border-radius: 3px; overflow: hidden; }
+        .loading-progress { width: 0%; height: 100%; background-color: var(--primary-color); border-radius: 3px; transition: width 0.3s ease-in-out; }
+        
+        @media (max-width: 992px) { .results-grid { grid-template-columns: 1fr; } .image-column { max-width: 400px; margin: auto; } }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="loading-content">
+            <div id="thinking-text">جاري رفع الصورة...</div>
+            <div class="loading-progress-bar">
+                <div id="loading-progress" class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page-wrapper">
+        <div class="container">
+            <% if (result) { %>
+                <div class="results-grid">
+                    <div class="image-column">
+                        <div class="uploaded-image-card">
+                            <img src="<%= result.uploadedImage %>" alt="العينة التي تم تحليلها">
+                        </div>
+                    </div>
+                    <div class="analysis-column">
+                        <h2>تقرير التحليل</h2>
+                        <% const bestGuess = result.predictions[0]; %>
+                        <div class="result-card">
+                            <h3>التصنيف الأساسي</h3>
+                            <div class="breed-name-ar"><%= translations[bestGuess.class] || bestGuess.class %></div>
+                            <div class="breed-name-en"><%= bestGuess.class.replace(/_/g, " ") %></div>
+                            <hr style="border-color: #444; margin: 1.5rem 0;">
+                            <div class="probability-main">مستوى الثقة: <span><%= (bestGuess.score * 100).toFixed(1) %>%</span></div>
+                        </div>
+                        
+                        <div class="other-possibilities">
+                            <h4>تصنيفات محتملة أخرى:</h4>
+                            <ul>
+                                <% result.predictions.slice(1, 4).forEach((p, index) => { %>
+                                    <li style="animation-delay: <%= (index * 0.1) + 0.2 %>s;">
+                                        <span class="class-name"><%= translations[p.class] || p.class %></span>
+                                        <div class="progress-bar">
+                                            <div class="progress" style="width: <%= (p.score * 100) %>%;"></div>
+                                        </div>
+                                        <span class="score"><%= (p.score * 100).toFixed(1) %>%</span>
+                                    </li>
+                                <% }) %>
+                            </ul>
+                        </div>
+                        <div style="text-align: center;">
+                            <a href="/" class="try-again-btn">تحليل صورة أخرى</a>
+                        </div>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="upload-container">
+                    <header>
+                        <h1>AI Breed Analysis</h1>
+                        <p>AI-Powered Dog Breed Identification</p>
+                    </header>
+                    <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+                        <div id="input-panel" onclick="document.getElementById('image-input').click()">
+                            <input type="file" id="image-input" name="image" accept="image/*">
+                            <div id="prompt-container">
+                                <p class="prompt-text">اسحب وأفلت صورة هنا، أو <span>اختر ملفًا</span></p>
+                            </div>
+                            <div id="preview-container">
+                                <img id="preview-image" src="#" alt="معاينة الصورة" />
+                            </div>
+                        </div>
+                        <button type="submit" id="analyze-btn" class="analyze-btn" style="display: none;">بدء التحليل</button>
+                    </form>
+                    <% if (error) { %><p class="error-message"><%= error %></p><% } %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadForm = document.getElementById('upload-form');
+            if (!uploadForm) return;
+
+            const inputPanel = document.getElementById('input-panel');
+            const imageInput = document.getElementById('image-input');
+            const promptContainer = document.getElementById('prompt-container');
+            const previewContainer = document.getElementById('preview-container');
+            const previewImage = document.getElementById('preview-image');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const thinkingText = document.getElementById('thinking-text');
+            const loadingProgress = document.getElementById('loading-progress');
+
+            async function runLoadingSequence() {
+                const stages = [
+                    { text: "جاري رفع الصورة...", progress: 10 },
+                    { text: "المرحلة 1: التحقق من الصورة...", progress: 40 },
+                    { text: "المرحلة 2: تصنيف السلالة...", progress: 75 },
+                    { text: "عرض التقرير...", progress: 95 }
+                ];
+                loadingOverlay.style.display = 'flex';
+                for (const stage of stages) {
+                    thinkingText.textContent = stage.text;
+                    loadingProgress.style.width = `${stage.progress}%`;
+                    await new Promise(res => setTimeout(res, 700));
+                }
+                uploadForm.submit();
+            }
+
+            uploadForm.addEventListener('submit', (e) => {
+                if (imageInput.files.length > 0) {
+                    e.preventDefault();
+                    runLoadingSequence();
+                }
+            });
+
+            const handleFileSelect = (files) => {
+                if (files.length > 0 && files[0].type.startsWith('image/')) {
+                    const file = files[0];
+                    imageInput.files = files;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewImage.src = e.target.result;
+                        promptContainer.style.display = 'none';
+                        previewContainer.style.display = 'block';
+                        analyzeBtn.style.display = 'block';
+                        inputPanel.classList.add('file-ready');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+            inputPanel.addEventListener('dragover', (e) => { e.preventDefault(); inputPanel.classList.add('drag-over'); });
+            inputPanel.addEventListener('dragleave', (e) => { e.preventDefault(); inputPanel.classList.remove('drag-over'); });
+            inputPanel.addEventListener('drop', (e) => {
+                e.preventDefault();
+                inputPanel.classList.remove('drag-over');
+                handleFileSelect(e.dataTransfer.files);
+            });
+            imageInput.addEventListener('change', () => handleFileSelect(imageInput.files));
+        });
+    </script>
+</body>
+</html>
